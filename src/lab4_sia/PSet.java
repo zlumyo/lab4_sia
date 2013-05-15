@@ -30,13 +30,13 @@ public class PSet<T extends Comparable> {
         }
     }
     
-    private Node node; /** Корень двочиного дерева поиска.*/
+    private Node root; /** Корень двочиного дерева поиска.*/
     
     /**
      * Создаёт пустое множество.
      */
     public PSet() {
-        node = null;
+        root = null;
     }
     
     /**
@@ -45,7 +45,7 @@ public class PSet<T extends Comparable> {
      * @return      true при успешном добавлении, иначе - false
      */
     public boolean add(T item) {
-        return traverseAdding(item, node);
+        return (traverseAdding(item, root) == null ? false : true);
     }
     
     /**
@@ -54,20 +54,19 @@ public class PSet<T extends Comparable> {
      * @param node  корень дерева
      * @return      true при успешном добавлении, иначе - false
      */
-    private boolean traverseAdding(T item, Node node) {
+    private Node traverseAdding(T item, Node node) {
         if (node == null) {         // если узел пустой, то создаём его
-            node = new Node(item);
-            return true;
+            return new Node(item);
         } else {
-            if (this.node.data.compareTo(item) == 0) {     // иначе, если мы нашли такой же элемент,
+            if (node.data.compareTo(item) == 0) {     // иначе, если мы нашли такой же элемент,
                                                            // то заканчиваем на этом
-                return false;
-            } else if (this.node.data.compareTo(item) > 0) {  // если корень больше, чем item, то
+                return null;
+            } else if (node.data.compareTo(item) > 0) {  // если корень больше, чем item, то
                                                               // рекурсивно работаем с левой частью
-                return traverseAdding(item, node.left);
+                return node.left = traverseAdding(item, node.left);
                 } else {                                      // если корень меньше, чем item, то
                                                               // рекурсивно работаем с правой частью
-                return traverseAdding(item, node.right);
+                return node.right = traverseAdding(item, node.right);
             }
         }
     }
@@ -95,7 +94,15 @@ public class PSet<T extends Comparable> {
      * @return мощность множества
      */
     public int size() {
-        return 0;
+        return traverseCounting(root);
+    }
+    
+    private int traverseCounting(Node node) {
+        if (node == null) {
+            return 0;
+        } else {
+            return 1 + traverseCounting(node.left) + traverseCounting(node.right);
+        }
     }
     
     /**
