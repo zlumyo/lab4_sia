@@ -28,6 +28,88 @@ public class PSet<T extends Comparable> {
             left = null;
             right = null;
         }
+        
+        /**
+         * Рекурсивный поиск элемента в дерерве.
+         * @param item искомый элемент
+         * @return true - при успешном нахождении, иначе - false
+         */
+        public boolean traverseSearch(T item) {
+            int result = data.compareTo(item);
+                    
+            if (result == 0) {
+                return true;
+            } else if (result > 0) {
+                return (left == null ? false : left.traverseSearch(item));
+            } else {
+                return (right == null ? false : right.traverseSearch(item));
+            }
+        }
+        
+       /**
+        * Рекурсивное добавление item в дерево с корнем node.
+        * @param item  добавляемый элемент
+        * @param node  корень дерева
+        * @return      true при успешном добавлении, иначе - false
+        */
+       private boolean traverseAdding(T item) {
+            if (this.data.compareTo(item) == 0) {        // иначе, если мы нашли такой же элемент,
+                                                         // то заканчиваем на этом
+                return false;
+            } else if (this.data.compareTo(item) > 0) {  // если корень больше, чем item, то
+                                                         // рекурсивно работаем с левой частью
+                if (left != null) {
+                    return left.traverseAdding(item);
+                } else {
+                    left = new Node(item); 
+                    return true;
+                }
+            } else {                                 // если корень меньше, чем item, то
+                                                         // рекурсивно работаем с правой частью
+                if (right != null) {
+                    return right.traverseAdding(item);
+                } else {
+                    right = new Node(item); 
+                    return true;
+                }
+            }
+        }
+       
+        /**
+         * Рекурсивный подсчёт количества узлов в двоичном дереве.
+         * @param item  узел дерева
+         * @return      количество дочерних узлов item + 1
+         */
+        private int traverseCounting() {
+            return 1 + (left != null ? left.traverseCounting() : 0) + 
+                    (right != null ? right.traverseCounting() : 0);
+        }
+        
+        /**
+         * Рекурсивное формирование dot-инструкций для двоичного дерева.
+         * @param node узел двоичного дерева
+         * @param result накопленные к текущему моменту dot-инструкции
+         * @return dot-инструкции для дерева с корнем node
+         */
+        private String traverseGettingDot() {
+            String result = "";
+ 
+            result += String.format("\t\"%s\";", data.toString()) + System.lineSeparator();
+            if (left != null) {
+                result += String.format("\t\"%s\" -> \"%s\";", data.toString(), 
+                        left.data.toString()) + System.lineSeparator();
+
+                result += left.traverseGettingDot();
+            }
+            if (right != null) {
+                result += String.format("\t\"%s\" -> \"%s\";", data.toString(), 
+                        right.data.toString()) + System.lineSeparator();
+
+                result += right.traverseGettingDot();
+            }
+ 
+            return result;
+        }
     }
     
     private Node root; /** Корень двочиного дерева поиска.*/
@@ -45,31 +127,11 @@ public class PSet<T extends Comparable> {
      * @return      true при успешном добавлении, иначе - false
      */
     public boolean add(T item) {
-        Node tmp = traverseAdding(item, root);
-        root = (root == null ? tmp : root);
-        return (tmp == null ? false : true);
-    }
-    
-    /**
-     * Рекурсивное добавление item в дерево с корнем node.
-     * @param item  добавляемый элемент
-     * @param node  корень дерева
-     * @return      true при успешном добавлении, иначе - false
-     */
-    private Node traverseAdding(T item, Node node) {
-        if (node == null) {         // если узел пустой, то создаём его
-            return new Node(item);
+        if (root == null) {
+            root = new Node(item);
+            return true;
         } else {
-            if (node.data.compareTo(item) == 0) {     // иначе, если мы нашли такой же элемент,
-                                                           // то заканчиваем на этом
-                return null;
-            } else if (node.data.compareTo(item) > 0) {  // если корень больше, чем item, то
-                                                              // рекурсивно работаем с левой частью
-                return node.left = traverseAdding(item, node.left);
-                } else {                                      // если корень меньше, чем item, то
-                                                              // рекурсивно работаем с правой частью
-                return node.right = traverseAdding(item, node.right);
-            }
+            return root.traverseAdding(item);
         }
     }
     
@@ -88,7 +150,7 @@ public class PSet<T extends Comparable> {
      * @return      true при успешном нахождении, иначе - false
      */
     public boolean contains(T item) {
-        return true;
+        return root.traverseSearch(item);
     }
     
     /**
@@ -96,20 +158,7 @@ public class PSet<T extends Comparable> {
      * @return мощность множества
      */
     public int size() {
-        return traverseCounting(root);
-    }
-    
-    /**
-     * Рекурсивный подсчёт количества узлов в двоичном дереве.
-     * @param item  узел дерева
-     * @return      количество дочерних узлов item + 1
-     */
-    private int traverseCounting(Node node) {
-        if (node == null) {
-            return 0;
-        } else {
-            return 1 + traverseCounting(node.left) + traverseCounting(node.right);
-        }
+        return (root != null ? root.traverseCounting() : 0);
     }
     
     /**
@@ -120,36 +169,8 @@ public class PSet<T extends Comparable> {
         String result = "digraph G {" + System.lineSeparator() + "\tnode[shape=circle];";
         result += System.lineSeparator();
         
-        result += traverseGettingDot(root);
+        result += (root == null ? "" : root.traverseGettingDot());
         
         return result + "}";
-    }
-    
-    /**
-     * Рекурсивное формирование dot-инструкций для двоичного дерева.
-     * @param node узел двоичного дерева
-     * @param result накопленные к текущему моменту dot-инструкции
-     * @return dot-инструкции для дерева с корнем node
-     */
-    private String traverseGettingDot(Node node) {
-        String result = "";
-        
-        if (node != null) {
-            result += String.format("\t\"%s\";", node.data.toString()) + System.lineSeparator();
-            if (node.left != null) {
-                result += String.format("\t\"%s\" -> \"%s\";", node.data.toString(), 
-                        node.left.data.toString()) + System.lineSeparator();
-                
-                result += traverseGettingDot(node.left);
-            }
-            if (node.right != null) {
-                result += String.format("\t\"%s\" -> \"%s\";", node.data.toString(), 
-                        node.right.data.toString()) + System.lineSeparator();
-                
-                result += traverseGettingDot(node.right);
-            }
-        }
-        
-        return result;
     }
 }
