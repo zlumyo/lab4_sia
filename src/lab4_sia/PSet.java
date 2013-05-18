@@ -45,7 +45,9 @@ public class PSet<T extends Comparable> {
      * @return      true при успешном добавлении, иначе - false
      */
     public boolean add(T item) {
-        return (traverseAdding(item, root) == null ? false : true);
+        Node tmp = traverseAdding(item, root);
+        root = (root == null ? tmp : root);
+        return (tmp == null ? false : true);
     }
     
     /**
@@ -115,10 +117,10 @@ public class PSet<T extends Comparable> {
      * @return dot-инструкции
      */
     public String getDotScript() {
-        String result = "digraph G {" + System.lineSeparator() + "\tnode[shape=circle]";
+        String result = "digraph G {" + System.lineSeparator() + "\tnode[shape=circle];";
         result += System.lineSeparator();
         
-        result = traverseGettingDot(root, result);
+        result += traverseGettingDot(root);
         
         return result + "}";
     }
@@ -129,15 +131,22 @@ public class PSet<T extends Comparable> {
      * @param result накопленные к текущему моменту dot-инструкции
      * @return dot-инструкции для дерева с корнем node
      */
-    private String traverseGettingDot(Node node, String result) {
+    private String traverseGettingDot(Node node) {
+        String result = "";
+        
         if (node != null) {
+            result += String.format("\t\"%s\";", node.data.toString()) + System.lineSeparator();
             if (node.left != null) {
-                result += String.format("\"%s\" -> \"%s\"", node.data.toString(), node.left.data.toString());
-                traverseGettingDot(node.left, result);
+                result += String.format("\t\"%s\" -> \"%s\";", node.data.toString(), 
+                        node.left.data.toString()) + System.lineSeparator();
+                
+                result += traverseGettingDot(node.left);
             }
-            if (node.left != null) {
-                result += String.format("\"%s\" -> \"%s\"", node.data.toString(), node.left.data.toString());
-                traverseGettingDot(node.right, result);
+            if (node.right != null) {
+                result += String.format("\t\"%s\" -> \"%s\";", node.data.toString(), 
+                        node.right.data.toString()) + System.lineSeparator();
+                
+                result += traverseGettingDot(node.right);
             }
         }
         
