@@ -97,6 +97,11 @@ public class PSet<T extends Comparable> {
         return traverseCounting(root);
     }
     
+    /**
+     * Рекурсивный подсчёт количества узлов в двоичном дереве.
+     * @param item  узел дерева
+     * @return      количество дочерних узлов item + 1
+     */
     private int traverseCounting(Node node) {
         if (node == null) {
             return 0;
@@ -110,6 +115,32 @@ public class PSet<T extends Comparable> {
      * @return dot-инструкции
      */
     public String getDotScript() {
-        return "";
+        String result = "digraph G {" + System.lineSeparator() + "\tnode[shape=circle]";
+        result += System.lineSeparator();
+        
+        result = traverseGettingDot(root, result);
+        
+        return result + "}";
+    }
+    
+    /**
+     * Рекурсивное формирование dot-инструкций для двоичного дерева.
+     * @param node узел двоичного дерева
+     * @param result накопленные к текущему моменту dot-инструкции
+     * @return dot-инструкции для дерева с корнем node
+     */
+    private String traverseGettingDot(Node node, String result) {
+        if (node != null) {
+            if (node.left != null) {
+                result += String.format("\"%s\" -> \"%s\"", node.data.toString(), node.left.data.toString());
+                traverseGettingDot(node.left, result);
+            }
+            if (node.left != null) {
+                result += String.format("\"%s\" -> \"%s\"", node.data.toString(), node.left.data.toString());
+                traverseGettingDot(node.right, result);
+            }
+        }
+        
+        return result;
     }
 }
