@@ -12,11 +12,11 @@ public class PSet<T extends Comparable> {
     /**
      * Узел двоичного дерева.
      * @author Владимир
-     * @param <T>   тип данных хранимых в узле
      */
-    private class Node<T extends Comparable> {
+    private class Node/*<T extends Comparable>*/ {
         public T data;              /** Данные хранящиеся в узле.*/
         public Node left, right;    /** Дочерние элементы узла.*/
+        public Node parent;         /** Родительский узел.*/
         private byte difference;    /** Разность между высотами левого и правого поддеревьев.*/
         
         /**
@@ -27,6 +27,7 @@ public class PSet<T extends Comparable> {
             this.difference = 0;
             left = null;
             right = null;
+            parent = null;
         }
         
         /**
@@ -52,7 +53,7 @@ public class PSet<T extends Comparable> {
         * @param node  корень дерева
         * @return      true при успешном добавлении, иначе - false
         */
-       private boolean traverseAdding(T item) {
+       public boolean traverseAdding(T item) {
             if (this.data.compareTo(item) == 0) {        // иначе, если мы нашли такой же элемент,
                                                          // то заканчиваем на этом
                 return false;
@@ -62,6 +63,7 @@ public class PSet<T extends Comparable> {
                     return left.traverseAdding(item);
                 } else {
                     left = new Node(item); 
+                    left.parent = this;
                     return true;
                 }
             } else {                                 // если корень меньше, чем item, то
@@ -70,6 +72,7 @@ public class PSet<T extends Comparable> {
                     return right.traverseAdding(item);
                 } else {
                     right = new Node(item); 
+                    right.parent = this;
                     return true;
                 }
             }
@@ -80,7 +83,7 @@ public class PSet<T extends Comparable> {
          * @param item  узел дерева
          * @return      количество дочерних узлов item + 1
          */
-        private int traverseCounting() {
+        public int traverseCounting() {
             return 1 + (left != null ? left.traverseCounting() : 0) + 
                     (right != null ? right.traverseCounting() : 0);
         }
@@ -91,7 +94,7 @@ public class PSet<T extends Comparable> {
          * @param result накопленные к текущему моменту dot-инструкции
          * @return dot-инструкции для дерева с корнем node
          */
-        private String traverseGettingDot() {
+        public String traverseGettingDot() {
             String result = "";
  
             result += String.format("\t\"%s\";", data.toString()) + System.lineSeparator();
@@ -109,6 +112,58 @@ public class PSet<T extends Comparable> {
             }
  
             return result;
+        }
+        
+        /**
+         * Рекурсивное удаление элемента из множества.
+         * @param item удаляемый элемент
+         * @return true - при успешном удалении, иначе - false
+         */
+        public boolean traverseRemoving(T item, Node root) {
+            if (this.data.compareTo(item) == 0) {
+                if (this.left == null && this.right == null) {
+                    if (this.parent.left == this) {
+                        this.parent.left = null;
+                    } else {
+                        this.parent.right = null;
+                    }
+                } else if (this.left != null && this.right == null) {
+                    if (this.parent.left == this) {
+                        this.parent.left = this.left;
+                    } else {
+                        this.parent.right = this.left;
+                    }
+                    
+                    this.left = null;
+                } else if (this.left == null && this.right != null) {
+                    if (this.parent.left == this) {
+                        this.parent.left = this.right;
+                    } else {
+                        this.parent.right = this.right;
+                    }
+                    
+                    this.right = null;
+                } else {
+                    Node rightmostParent = this.traverseRightmost();
+                    T tmp = rightmostParent.right.data;
+                    root.traverseRemoving(rightmostParent.right.data, root);
+                    this.data = tmp;
+                }
+                
+                return true;
+            } else if (this.data.compareTo(item) > 0) {
+                return (this.left == null ? false : this.left.traverseRemoving(item, root));
+            } else {
+                return (this.right == null ? false : this.right.traverseRemoving(item, root));
+            }
+        }
+        
+        /**
+         * Ищет родителя самого правого узла у дерева с корнем this.
+         * @return узел-родитель самого правого узла
+         */
+        private Node traverseRightmost() {
+            return (this.right == null ? this : this.right.traverseRightmost());
         }
     }
     
@@ -141,7 +196,30 @@ public class PSet<T extends Comparable> {
      * @return      true при успешном удалении, иначе - false
      */
     public boolean remove(T item) {
-        return true;
+        if (root == null) {
+            return false;
+        } else if (root.data.compareTo(item) == 0) {
+            if (root.left == null && root.right == null) {
+                root = null;
+            } else if (root.left != null && root.right == null) {
+                Node tmp = root.left;
+                root.left = null;
+                root = tmp;
+            } else if (root.left == null && root.right != null) {
+                Node tmp = root.right;
+                root.right = null;
+                root = tmp;
+            } else {
+                Node rightmostParent = root.traverseRightmost();
+                T tmp = rightmostParent.right.data;
+                root.traverseRemoving(rightmostParent.right.data, root);
+                root.data = tmp;
+            }
+
+            return true;
+        } else {
+            return root.traverseRemoving(item, root);
+        }
     }
     
     /**
@@ -150,7 +228,7 @@ public class PSet<T extends Comparable> {
      * @return      true при успешном нахождении, иначе - false
      */
     public boolean contains(T item) {
-        return root.traverseSearch(item);
+        return (root != null ? root.traverseSearch(item) : false);
     }
     
     /**
