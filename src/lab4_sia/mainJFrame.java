@@ -3,18 +3,89 @@
  * and open the template in the editor.
  */
 package lab4_sia;
+import java.awt.BorderLayout;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
 /**
  *
- * @author Григорий
+ * @author Григорий, Pahomov Dmitry
  */
 public class mainJFrame extends javax.swing.JFrame {
 
-    PSet<String> myTree = new PSet<String>();
+
     /**
      * Creates new form mainJFrame
      */
     public mainJFrame() {
         initComponents();
+
+        this.updateImage();
+    }
+
+    public void changeImage(String newImageFileName) {
+        ii = new ImageIcon(newImageFileName);
+        imageLabel = new JLabel(ii);
+        jScrollPane1.setViewportView(imageLabel);
+        return;
+    }
+
+    public void changeImage(byte[] newImage) {
+        ii = new ImageIcon(newImage);
+        imageLabel = new JLabel(ii);
+        jScrollPane1.setViewportView(imageLabel);
+        return;
+    }
+
+    public void updateImage() {
+        byte[] img_stream = this.RunDot(this.myTree.getDotScript());
+        if(img_stream!=null) {
+            this.changeImage(img_stream);
+        }
+        return;
+    }
+
+    /**
+     * Run dot.exe with given script.
+     * @param script is dot-script to execute.
+     * @return status of dot execution.
+     */
+    private byte[] RunDot(String script) {
+
+        byte[] img_stream = null;
+        Runtime r = Runtime.getRuntime();
+        Process p;
+        try {
+            p = r.exec(new String[] {"dot", "-Tpng"});
+            InputStream err = p.getErrorStream();
+            InputStream out = p.getInputStream();
+            OutputStream in = p.getOutputStream();
+
+            in.write(script.getBytes());
+            in.close();
+
+            if (err.available() != 0) {
+                byte[] errmsg = new byte[err.available()];
+                err.read(errmsg);
+                throw new Throwable(new String(errmsg));
+            }
+
+            err.close();
+            p.waitFor();
+
+            img_stream = new byte[out.available()];
+            out.read(img_stream);
+
+        } catch (Throwable ex) {
+            System.err.printf(ex.getLocalizedMessage());
+        }
+
+        return img_stream;
     }
 
     /**
@@ -30,7 +101,7 @@ public class mainJFrame extends javax.swing.JFrame {
         addJButton = new javax.swing.JButton();
         fiendJButton = new javax.swing.JButton();
         deleteJButton = new javax.swing.JButton();
-        jPanel1 = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -45,7 +116,7 @@ public class mainJFrame extends javax.swing.JFrame {
         });
 
         fiendJButton.setFont(new java.awt.Font("Times New Roman", 0, 11)); // NOI18N
-        fiendJButton.setText("Finde");
+        fiendJButton.setText("Find");
         fiendJButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 fiendJButtonActionPerformed(evt);
@@ -60,27 +131,16 @@ public class mainJFrame extends javax.swing.JFrame {
             }
         });
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 277, Short.MAX_VALUE)
-        );
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(valueJTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
+                        .addComponent(valueJTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(addJButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -98,8 +158,8 @@ public class mainJFrame extends javax.swing.JFrame {
                     .addComponent(addJButton)
                     .addComponent(fiendJButton)
                     .addComponent(deleteJButton))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 273, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
 
@@ -108,14 +168,16 @@ public class mainJFrame extends javax.swing.JFrame {
 
     private void deleteJButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteJButtonActionPerformed
         myTree.remove(valueJTextField.getText());
+        this.updateImage();
     }//GEN-LAST:event_deleteJButtonActionPerformed
 
     private void addJButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addJButtonActionPerformed
         myTree.add(valueJTextField.getText());
+        this.updateImage();
     }//GEN-LAST:event_addJButtonActionPerformed
 
     private void fiendJButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fiendJButtonActionPerformed
-        myTree.contains(valueJTextField.getText());
+        JOptionPane.showMessageDialog(null, myTree.contains(valueJTextField.getText())?"finded":"not finded");
     }//GEN-LAST:event_fiendJButtonActionPerformed
 
     /**
@@ -125,7 +187,7 @@ public class mainJFrame extends javax.swing.JFrame {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -156,7 +218,10 @@ public class mainJFrame extends javax.swing.JFrame {
     private javax.swing.JButton addJButton;
     private javax.swing.JButton deleteJButton;
     private javax.swing.JButton fiendJButton;
-    private javax.swing.JPanel jPanel1;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField valueJTextField;
     // End of variables declaration//GEN-END:variables
+    private ImageIcon ii;
+    private JLabel imageLabel;
+    private PSet<String> myTree = new PSet<String>();
 }
