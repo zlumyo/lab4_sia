@@ -13,11 +13,11 @@ public class PSet<T extends Comparable> {
      * Узел двоичного дерева.
      * @author Владимир
      */
-    private class Node/*<T extends Comparable>*/ {
+    private class Node {
         public T data;              /** Данные хранящиеся в узле.*/
         public Node left, right;    /** Дочерние элементы узла.*/
         public Node parent;         /** Родительский узел.*/
-        private byte difference;    /** Разность между высотами левого и правого поддеревьев.*/
+        private int difference;     /** Разность между высотами левого и правого поддеревьев.*/
         
         /**
          * Создаёт узел с данными.
@@ -53,29 +53,111 @@ public class PSet<T extends Comparable> {
         * @param node  корень дерева
         * @return      true при успешном добавлении, иначе - false
         */
-       public boolean traverseAdding(T item) {
-            if (this.data.compareTo(item) == 0) {        // иначе, если мы нашли такой же элемент,
-                                                         // то заканчиваем на этом
-                return false;
-            } else if (this.data.compareTo(item) > 0) {  // если корень больше, чем item, то
-                                                         // рекурсивно работаем с левой частью
+       public boolean traverseAdding(T item, Object[] refRoot, int[] diff) {
+            
+            boolean result = true;
+            if (this.data.compareTo(item) == 0) {       // иначе, если мы нашли такой же элемент,
+                                                        // то заканчиваем на этом
+                result = false;
+            } else if (this.data.compareTo(item) > 0) { // если корень больше, чем item, то
+                                                        // рекурсивно работаем с левой частью
                 if (left != null) {
-                    return left.traverseAdding(item);
+                    result = left.traverseAdding(item, refRoot, diff);
+                    this.difference -= Math.abs(diff[0]);
                 } else {
                     left = new Node(item); 
                     left.parent = this;
-                    return true;
+                    this.difference--;                  // баланс смещается влево
+                    diff[0] = -1;                       
                 }
-            } else {                                 // если корень меньше, чем item, то
-                                                         // рекурсивно работаем с правой частью
+                    
+                if (this.difference == -2) {            // проверка на имбаланс влево
+                    if (left.difference == -1) {        // случай малого правого вращения
+                        if (this == refRoot[0]) refRoot[0] = left;
+                        else { 
+                            if (this.parent.left == this) this.parent.left = left;
+                            else this.parent.right = left;
+                        }
+                        Node tmp = left.right;
+                        if (tmp != null ) tmp.parent = this;
+                        left.parent = this.parent;
+                        this.parent = left;
+                        this.left.difference = (left.right != null ? 0 : 1);
+                        left.right = this;
+                        this.left = tmp;
+                        this.difference = 0;
+                    } else {                            // случай большого правого вращения
+                        if (this == refRoot[0]) refRoot[0] = left.right;            // если надо, то меняем корень всего дерева
+                        else { // иначе меняем у родителя текущей вершины нужную ветвь
+                            if (this.parent.left == this) this.parent.left = left.right;
+                            else this.parent.right = left.right;
+                        }                         
+                        Node tmp = left.right;                                      // = C, A = this, B = left
+                        tmp.parent = this.parent;                                   // устанавливаем нового родителя для С
+                        left.difference = (left.right.difference == 1 ? -1 : 0);    // меняем разность у В
+                        tmp.difference = 0;                                         // разность у С теперь точно будет 0
+                        left.right = tmp.left;                                      // левый узел B теперь правый узел С
+                        tmp.left = this.left;                                       // а левый узел С теперь В
+                        this.left = tmp.right;                                      // теперь у А слева то, что у С справа
+                        tmp.right.parent = this;                                    // меняем родителя у штуки справа от С на А
+                        tmp.right = this;                                           // теперь справа от С стоит А
+                        this.parent = tmp;                                          // теперь родитель А это С
+                        tmp.left.parent = tmp;                                      // теперь родитель B это С
+                        this.difference = (tmp.difference != -1 ? 0 : 1);           // вычисляем новую разность у А
+                    }
+                    diff[0] = 0;
+                }
+            } else {                                    // если корень меньше, чем item, то
+                                                        // рекурсивно работаем с правой частью
                 if (right != null) {
-                    return right.traverseAdding(item);
+                    result = right.traverseAdding(item, refRoot, diff);
+                    this.difference += Math.abs(diff[0]);
                 } else {
                     right = new Node(item); 
                     right.parent = this;
-                    return true;
+                    this.difference++;                  // баланс смещается вправо
+                    diff[0] = 1;
+                }
+                
+                if (this.difference == 2) {             // проверка на имбаланс вправо
+                    if (right.difference == 1) {        // случай малого левого вращения
+                        if (this == refRoot[0]) refRoot[0] = right;
+                        else { 
+                            if (this.parent.left == this) this.parent.left = right;
+                            else this.parent.right = right;
+                        }
+                        Node tmp = right.left;
+                        if (tmp != null ) tmp.parent = this;
+                        right.parent = this.parent;
+                        this.parent = right;
+                        this.right.difference = (right.left != null ? 0 : -1);
+                        right.left = this;
+                        this.right = tmp;
+                        this.difference = 0;
+                    } else {                            // случай большого левого вращения
+                        if (this == refRoot[0]) refRoot[0] = right.left;            // если надо, то меняем корень всего дерева
+                        else { // иначе меняем у родителя текущей вершины нужную ветвь
+                            if (this.parent.left == this) this.parent.left = right.left;
+                            else this.parent.right = right.left;
+                        } 
+                        Node tmp = right.left;                                      // = C, A = this, B = left
+                        tmp.parent = this.parent;                                   // устанавливаем нового родителя для С
+                        right.difference = (right.left.difference == 1 ? 0 : 1);    // меняем разность у В
+                        tmp.difference = 0;                                         // разность у С теперь точно будет 0
+                        right.left = tmp.right;                                     // левый узел B теперь правый узел С
+                        tmp.right = this.right;                                     // а левый узел С теперь В
+                        this.right = tmp.left;                                      // теперь у А слева то, что у С справа
+                        tmp.left.parent = this;                                     // меняем родителя у штуки справа от С на А
+                        tmp.left = this;                                            // теперь справа от С стоит А
+                        this.parent = tmp;                                          // теперь родитель А это С
+                        tmp.right.parent = tmp;                                     // теперь родитель B это С
+                        this.difference = (tmp.difference == -1 ? 0 : -1);          // вычисляем новую разность у А
+                    }
+                    diff[0] = 0;
                 }
             }
+            
+            return result;
         }
        
         /**
@@ -186,7 +268,11 @@ public class PSet<T extends Comparable> {
             root = new Node(item);
             return true;
         } else {
-            return root.traverseAdding(item);
+            Object[] refRoot = new Object[] {root};
+            int[] diff = {0};
+            boolean result = root.traverseAdding(item, refRoot, diff);
+            root = (Node)refRoot[0];
+            return result;
         }
     }
     

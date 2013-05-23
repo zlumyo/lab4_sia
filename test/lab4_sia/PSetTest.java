@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package lab4_sia;
 
 import org.junit.After;
@@ -34,6 +31,7 @@ public class PSetTest {
     
     @After
     public void tearDown() {
+        System.out.println("Готово!");
     }
 
     /**
@@ -53,7 +51,19 @@ public class PSetTest {
         result = instance.add(item);
         assertEquals("Добавление существующего элемента провалилось!", expResult, result);
         
-        System.out.println("Готово!");
+        expResult = true;
+        instance.add(2);
+        result = instance.add(3);
+        assertEquals("Добавление c малым вращением провалилось!", expResult, result);
+        
+        instance.add(5);
+        instance.add(6);
+        result = instance.add(7);
+        assertEquals("Другое добавление c малым вращением провалилось!", expResult, result);
+        
+        instance.remove(7);
+        result = instance.add(4);
+        assertEquals("Добавление c большим вращением провалилось!", expResult, result);
     }
 
     /**
@@ -73,8 +83,6 @@ public class PSetTest {
         expResult = false;
         result = instance.remove(item);
         assertEquals("Удаление отсутствующего элемента провалилось!", expResult, result);
-        
-        System.out.println("Готово!");
     }
 
     /**
@@ -95,8 +103,6 @@ public class PSetTest {
         expResult = false;
         result = instance.contains(item);
         assertEquals("Поиск отсутствующего элемента провалился!", expResult, result);
-        
-        System.out.println("Готово!");
     }
 
     /**
@@ -115,8 +121,6 @@ public class PSetTest {
         expResult = 1;
         result = instance.size();
         assertEquals("Проверка непустого множества провалилась!", expResult, result);
-        
-        System.out.println("Готово!");
     }
 
     /**
@@ -142,7 +146,5 @@ public class PSetTest {
         expResult += "\t\"3\";" + System.lineSeparator() + "}";
         result = instance.getDotScript();
         assertEquals("Проверка множества с 3 элементами провалилась.", expResult, result);
-        
-        System.out.println("Готово!");
     }
 }
